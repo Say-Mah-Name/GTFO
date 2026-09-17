@@ -60,16 +60,11 @@ jobs:
           retention-days: 14
 
       - name: Publish DMG to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: Latest Release
-          body: "Direct download of the latest application release."
-          prerelease: true
-          overwrite: true
-          files: composeApp/build/compose/release-dmgs/*.dmg
+        run: |
+          gh release view latest || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease
+          gh release upload latest composeApp/build/compose/release-dmgs/*.dmg --clobber
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-android:
     name: Build Android Release APKs
@@ -111,13 +106,8 @@ jobs:
           retention-days: 14
 
       - name: Publish Android APKs to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: Latest Release
-          body: "Direct download of the latest application release."
-          prerelease: true
-          overwrite: true
-          files: androidApp/build/outputs/apk/full/*/*.apk
+        run: |
+          gh release view latest || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease
+          gh release upload latest androidApp/build/outputs/apk/full/*/*.apk --clobber
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
