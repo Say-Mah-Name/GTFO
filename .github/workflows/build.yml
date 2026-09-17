@@ -18,8 +18,6 @@ jobs:
     name: Build macOS DMG (Apple Silicon)
     if: "${{ inputs.target == 'all' || inputs.target == 'macos' }}"
     runs-on: macos-14
-    permissions:
-      contents: write
 
     steps:
       - name: Check out private repository
@@ -59,19 +57,10 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish DMG to Release
-        run: |
-          gh release view latest --repo ${{ github.repository }} || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease --repo ${{ github.repository }}
-          gh release upload latest composeApp/build/compose/release-dmgs/*.dmg --clobber --repo ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build-android:
     name: Build Android Release APKs
     if: "${{ inputs.target == 'all' || inputs.target == 'android' }}"
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Check out private repository
@@ -105,9 +94,30 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish Android APKs to Release
-        run: |
-          gh release view latest --repo ${{ github.repository }} || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease --repo ${{ github.repository }}
-          gh release upload latest androidApp/build/outputs/apk/full/*/*.apk --clobber --repo ${{ github.repository }}
+  publish:
+    name: Publish Release Assets
+    needs: [build-macos, build-android]
+    if: always() && !cancelled() && (needs.build-macos.result == 'success' || needs.build-android.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Nuvio-Kai-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Release
+          body: "Direct download of the latest application release."
+          prerelease: true
+          overwrite_files: true
+          files: release-assets/*
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
