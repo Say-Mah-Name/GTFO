@@ -13,6 +13,9 @@ on:
           - macos
           - android
 
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
+
 jobs:
   build-macos:
     name: Build macOS DMG (Apple Silicon)
@@ -126,3 +129,4 @@ jobs:
           files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
