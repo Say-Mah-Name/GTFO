@@ -61,8 +61,8 @@ jobs:
 
       - name: Publish DMG to Release
         run: |
-          gh release view latest || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease
-          gh release upload latest composeApp/build/compose/release-dmgs/*.dmg --clobber
+          gh release view latest --repo ${{ github.repository }} || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease --repo ${{ github.repository }}
+          gh release upload latest composeApp/build/compose/release-dmgs/*.dmg --clobber --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -107,7 +107,7 @@ jobs:
 
       - name: Publish Android APKs to Release
         run: |
-          gh release view latest || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease
-          gh release upload latest androidApp/build/outputs/apk/full/*/*.apk --clobber
+          gh release view latest --repo ${{ github.repository }} || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease --repo ${{ github.repository }}
+          gh release upload latest androidApp/build/outputs/apk/full/*/*.apk --clobber --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
