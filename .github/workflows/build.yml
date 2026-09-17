@@ -13,9 +13,6 @@ on:
           - macos
           - android
 
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
-
 jobs:
   build-macos:
     name: Build macOS DMG (Apple Silicon)
@@ -113,20 +110,33 @@ jobs:
           path: release-assets
           merge-multiple: true
 
-      - name: Delete stale release and clear locks
+      - name: Prepare release files
         run: |
-          gh release delete latest -y --cleanup-tag --repo ${{ github.repository }} 2>/dev/null || true
+          mkdir -p dist
+          find release-assets -type f \( -name "*.apk" -o -name "*.dmg" \) -exec cp {} dist/ \;
+          echo "=== Clean files ready for upload ==="
+          ls -lh dist/
+
+      - name: Publish Assets to Release
+        run: |
+          gh release view latest --repo ${{ github.repository }} || gh release create latest --title "Latest Release" --notes "Direct download of the latest application release." --prerelease --repo ${{ github.repository }}
+          
+          for file in dist/*; do
+            echo "----------------------------------------"
+            echo "Uploading $file..."
+            for attempt in 1 2 3; do
+              if gh release upload latest "$file" --clobber --repo ${{ github.repository }}; then
+                echo "Successfully uploaded $file"
+                break
+              fi
+              echo "Attempt $attempt failed for $file. Retrying in 5 seconds..."
+              sleep 5
+              if [ $attempt -eq 3 ]; then
+                echo "Failed to upload $file after 3 attempts."
+                exit 1
+              fi
+            done
+          done
+          echo "All release assets uploaded successfully!"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish to Fresh Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: Latest Release
-          body: "Direct download of the latest application release."
-          prerelease: true
-          files: release-assets/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
